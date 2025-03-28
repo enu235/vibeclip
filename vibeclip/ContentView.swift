@@ -11,42 +11,71 @@ import AppKit
 struct ContentView: View {
     @EnvironmentObject private var clipboardManager: ClipboardManager
     @State private var selectedItem: ClipboardItem?
+    @State private var searchText = ""
+    
+    var filteredItems: [ClipboardItem] {
+        if searchText.isEmpty {
+            return clipboardManager.items
+        }
+        return clipboardManager.items.filter { item in
+            item.content.localizedCaseInsensitiveContains(searchText)
+        }
+    }
     
     var body: some View {
-        NavigationView {
-            List(selection: $selectedItem) {
-                ForEach(clipboardManager.items) { item in
-                    ClipboardItemRow(item: item)
+        VStack(spacing: 0) {
+            // Search bar
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.secondary)
+                TextField("Search", text: $searchText)
+                    .textFieldStyle(PlainTextFieldStyle())
+                if !searchText.isEmpty {
+                    Button(action: { searchText = "" }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.secondary)
+                    }
                 }
+            }
+            .padding(8)
+            .background(Color(.windowBackgroundColor))
+            
+            // List of items
+            List(filteredItems, selection: $selectedItem) { item in
+                ClipboardItemRow(item: item)
                     .contextMenu {
                         Button("Copy to Clipboard") {
                             clipboardManager.copyToClipboard(item)
                         }
+                        Button("Delete", role: .destructive) {
+                            clipboardManager.deleteItem(item)
+                        }
                     }
             }
-            .navigationTitle("Clipboard History")
-            .toolbar {
-                ToolbarItem(placement: .navigation) {
-                    Button(action: toggleSidebar) {
-                        Image(systemName: "sidebar.left")
-                    }
+            
+            // Bottom toolbar
+            HStack {
+                Button(action: {
+                    NSApplication.shared.terminate(nil)
+                }) {
+                    Label("Quit", systemImage: "power")
                 }
+                .buttonStyle(.plain)
                 
-                ToolbarItem(placement: .automatic) {
-                    Button(action: clearClipboard) {
-                        Image(systemName: "trash")
-                    }
+                Spacer()
+                
+                Button(action: {
+                    clipboardManager.clearHistory()
+                }) {
+                    Label("Clear History", systemImage: "trash")
                 }
+                .buttonStyle(.plain)
             }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .background(Color(.windowBackgroundColor))
         }
-    }
-    
-    private func toggleSidebar() {
-        NSApp.keyWindow?.firstResponder?.tryToPerform(#selector(NSSplitViewController.toggleSidebar(_:)), with: nil)
-    }
-    
-    private func clearClipboard() {
-        NSPasteboard.general.clearContents()
+        .frame(width: 480, height: 300)
     }
 }
 
@@ -55,11 +84,12 @@ struct ClipboardItemRow: View {
     
     var body: some View {
         HStack {
-            Image(systemName: item.type == .text ? "doc.text" : "photo")
+            Image(systemName: item.icon)
                 .foregroundColor(.accentColor)
+                .frame(width: 24)
             
-            VStack(alignment: .leading) {
-                Text(item.type == .text ? String(item.content.prefix(50)) : "Image")
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.preview)
                     .lineLimit(1)
                 Text(item.timestamp, style: .time)
                     .font(.caption)
