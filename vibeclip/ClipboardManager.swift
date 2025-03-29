@@ -18,9 +18,10 @@ class ClipboardManager: ObservableObject {
     
     private func startMonitoring() {
         // Initial check
-        checkClipboard()
+        // checkClipboard() // REMOVED: Avoid calling synchronously during init
         
         // Set up timer for monitoring
+        // The timer will perform the first check shortly after init.
         timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             self?.checkClipboard()
         }
