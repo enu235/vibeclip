@@ -69,23 +69,38 @@ class ClipboardManager: ObservableObject {
     }
     
     func copyToClipboard(_ item: ClipboardItem) {
+        print("Attempting to copy original item: \(item.id) - Type: \(item.type)")
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         
+        var success = false
         switch item.type {
         case .text:
-            pasteboard.setString(item.content, forType: .string)
+            success = pasteboard.setString(item.content, forType: .string)
         case .image:
             if let imageData = Data(base64Encoded: item.content) {
-                pasteboard.setData(imageData, forType: .tiff)
+                success = pasteboard.setData(imageData, forType: .tiff)
+            } else {
+                print("Error decoding base64 image data for item \(item.id)")
             }
         case .url:
-            pasteboard.setString(item.content, forType: .URL)
+            success = pasteboard.setString(item.content, forType: .URL)
         case .rtf:
             if let rtfData = item.content.data(using: .utf8) {
-                pasteboard.setData(rtfData, forType: .rtf)
+                success = pasteboard.setData(rtfData, forType: .rtf)
+            } else {
+                print("Error encoding RTF data for item \(item.id)")
             }
         }
+        print("Copy original item \(item.id) successful: \(success)")
+    }
+    
+    func copyAsPlainText(_ item: ClipboardItem) {
+        print("Attempting to copy item as plain text: \(item.id)")
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        let success = pasteboard.setString(item.content, forType: .string) // Always copy as plain text
+        print("Copy item as plain text \(item.id) successful: \(success)")
     }
     
     func clearHistory() {

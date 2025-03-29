@@ -81,6 +81,7 @@ struct ContentView: View {
 
 struct ClipboardItemRow: View {
     let item: ClipboardItem
+    @EnvironmentObject private var clipboardManager: ClipboardManager
     
     var body: some View {
         HStack {
@@ -94,6 +95,26 @@ struct ClipboardItemRow: View {
                 Text(item.timestamp, style: .time)
                     .font(.caption)
                     .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            HStack(spacing: 8) {
+                Button {
+                    clipboardManager.copyToClipboard(item)
+                } label: {
+                    Label("Copy Original", systemImage: "doc.on.doc")
+                }
+                .buttonStyle(.plain)
+                .help("Copy original item to clipboard")
+                
+                Button {
+                    clipboardManager.copyAsPlainText(item)
+                } label: {
+                    Label("Copy as Plain Text", systemImage: "doc.text")
+                }
+                .buttonStyle(.plain)
+                .help("Copy item as plain text to clipboard")
             }
         }
         .padding(.vertical, 4)
